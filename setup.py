@@ -12,7 +12,7 @@ DESCRIPTION = open("README.md").read()
 
 setup(name=NAME,
       version=VERSION,
-      description="Python webim client",
+      description="Python webim client for nextalk.im",
       long_description=DESCRIPTION,
       author=AUTHOR,
       author_email="ery.lee@gmail.com",
