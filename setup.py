@@ -1,26 +1,36 @@
 #!/usr/bin/env python
 
 from setuptools import setup
-import errdb
 
-setup(name="webim",
-      version=webim.__version__,
+import webim
+
+NAME = "webim"
+PACKAGE = "webim"
+VERSION = webim.__version__
+AUTHOR = webim.__author__
+
+setup(name=NAME,
+      version=VERSION,
       description="Python webim client",
       long_description=open("README.md").read(),
-      author="Ery Lee",
+      author=AUTHOR,
       author_email="ery.lee@gmail.com",
+      license="BSD",
       maintainer="Ery Lee",
       maintainer_email="ery.lee@gmail.com",
       url="http://github.com/webim/webim-python",
-      download_url="http://nextalk.im",
-      py_modules=["webim"],
+      download_url="http://github.com/webim/webim-python",
+      packages=["webim"],
+      package_dir={"webim": "webim"},
       classifiers=[
-        "Development Status :: 1 - Beta/Unstable",
+        "Development Status :: 4 - Beta",
+        "Environment :: Web Environment",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: Python Software Foundation License",
+        "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        ])
+        ]
+)
 

@@ -15,8 +15,8 @@ Usage summary
 This should give you a feel for how this module operates::
 
     import webim 
-    endpoint = webim.Endpoint("uid1", "user1")
-    c = webim.Client(endpoint, 'domain', 'apikey', host='127.0.0.1', port = 8000)
+    user = {'uid': 'uid1', 'nick': 'user1', 'presence': 'online', 'show': 'available', 'status': ''}
+    c = webim.Client(user, 'domain', 'apikey', host='127.0.0.1', port = 8000)
     c.online(['uid1','uid2','uid3'], ['grp1','grp2','grp3'])
     c.offline()
 
@@ -26,15 +26,7 @@ Detailed Documentation
 More detailed documentation is available in the L{Client} class.
 """
 
-__author__    = "Ery Lee <ery.lee@gmail.com>"
-__version__ = "5.2"
-__copyright__ = "Copyright (C) 2014 Ery Lee"
-__license__   = "Python Software Foundation License"
-
 APIVSN = 'v5'
-#AVATAR_SIZE = 50
-#AVATAR_DEFAULT = 'identicon'
-#GRAVATAR_DEFAULT_URL = 'http://www.gravatar.com/avatar/%s?s={0}&d={1}&f=y'.format(AVATAR_SIZE, AVATAR_DEFAULT)
 
 try:
     import json
@@ -54,75 +46,22 @@ def encode_utf8(data_dict):
         if isinstance(value, unicode):
             data_dict[key] = value.encode('utf8')
     return data_dict
-    
-#def gravatar_default(oid):
-#    return GRAVATAR_DEFAULT_URL % hashlib.sha1(str(oid)).hexdigest()
-        
-#def gravatar_url(email):
-#    url = "http://www.gravatar.com/avatar/" + hashlib.md5(email.lower()).hexdigest() + "?"
-#    url += urllib.urlencode({'s':str(AVATAR_SIZE)})
-#    return url
-
-# ==============================================================================
-# Endpoint 
-# ==============================================================================    
-class Endpoint:
-
-    def __init__(self, id, nick, presence="offline", show="unavailable", status="", status_time="", url="", pic_url = ""):
-        """
-        Endpoint
-
-        @param id: endpoint id
-        @param nick: endpoint nick
-        """
-        self.id = id
-        self.nick = nick
-        self.presence = presence
-        self.show = show
-        self.status = status
-        self.status_time = status_time
-        self.url = url
-        self.pic_url = pic_url
-
-class Message:
-
-    def __init__(self, to, nick, body, timestamp, type = "chat", style = ""):
-        self.to = to
-        self.nick = nick
-        self.body = body
-        self.timestamp = timestamp
-        self.type = type
-        self.style = style
-
-class Presence:
-
-    def __init__(self, type = "online", show = "available", status = ""):
-        self.type = type
-        self.show = show
-        self.status = status
-
-class Status:
-
-    def __init__(self, to, show, status):
-        self.to = to
-        self.show = show
-        self.status = status
 
 # ==============================================================================
 # Client
 # ==============================================================================    
 class Client:
     
-    def __init__(self, endpoint, domain, apikey,
+    def __init__(self, user, domain, apikey,
                  ticket=None, host = 'localhost', port=8000, timeout=10):
         """
         Create a new Client object with the given host and port
 
-        @param endpoint: endpoint
+        @param user: user
         @param host: host
         @param port: port
         """
-        self.endpoint = endpoint
+        self.user = user
         self.domain = domain
         self.apikey = apikey
         self.ticket = ticket
@@ -131,7 +70,6 @@ class Client:
         self.timeout = timeout
         
     def online(self, buddies, groups):
-
         """
         Client online
         """
@@ -139,10 +77,10 @@ class Client:
         reqdata.update({
             'buddies': ','.join(buddies),
             'groups': ','.join(groups),
-            'name': self.endpoint.id,
-            'nick': self.endpoint.nick,
-            'show': self.endpoint.show,
-            'status': self.endpoint.status
+            'name': self.user['id'],
+            'nick': self.user['nick'],
+            'show': self.user['show'],
+            'status': self.user['status']
         })
         status, body = self._httpost('/presences/online', reqdata)
         respdata = json.loads(body)
@@ -154,8 +92,7 @@ class Client:
         """
         Client offline
         """
-        reqdata = self._reqdata
-        status, body = self._httpost('/presences/offline', reqdata)
+        status, body = self._httpost('/presences/offline', self._reqdata)
         respdata = json.loads(body)
         return (status, respdata)
 
@@ -165,9 +102,9 @@ class Client:
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.endpoint.nick,   
-            'show': presence.show,
-            'status': presence.status 
+            'nick': self.user['nick'],   
+            'show': presence['show'],
+            'status': presence['status']
         })
         status, body = self._httpost('/presences/show', reqdata)
         return (status, json.loads(body))
@@ -178,12 +115,12 @@ class Client:
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.endpoint.nick,
-            'type': message.type,
-            'to': message.to,
-            'body': message.body,
-            'style': message.style,
-            'timestamp': message.timestamp
+            'nick': self.user['nick'],
+            'type': message['type'],
+            'to': message['to'],
+            'body': message['body'],
+            'style': message['style'],
+            'timestamp': message['timestamp']
         })
         status, body = self._httpost('/messages', reqdata)
         return (status, json.loads(body))
@@ -196,12 +133,12 @@ class Client:
         reqdata = self._reqdata
         reqdata.update({
             'from': from1,
-            'nick': self.endpoint.nick,
-            'type': message.type,
-            'to': message.to,
-            'body': message.body,
-            'style': message.style,
-            'timestamp': message.timestamp
+            'nick': self.user['nick'],
+            'type': message['type'],
+            'to': message['to'],
+            'body': message['body'],
+            'style': message['style'],
+            'timestamp': message['timestamp']
         })
         status, body = self._httpost('/messages', reqdata)
         return (status, json.loads(body))
@@ -212,9 +149,9 @@ class Client:
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.endpoint.nick,
-            'to': status.to,
-            'show': status.show
+            'nick': self.user['nick'],
+            'to': status['to'],
+            'show': status['show']
         })
         status, body = self._httpost('/statuses', reqdata)
         return (status, json.loads(body))
@@ -247,7 +184,7 @@ class Client:
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.endpoint.nick,
+            'nick': self.user['nick'],
             'group': gid
         })
         status, body = self._httpost('/group/join', reqdata)
@@ -259,7 +196,7 @@ class Client:
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.endpoint.nick,
+            'nick': self.user['nick'],
             'group': gid
         })
         status, body = self._httpost('/group/leave', reqdata)
@@ -268,7 +205,7 @@ class Client:
     @property
     def _reqdata(self):
         data = {
-            'version': __version__,
+            'version': APIVSN,
             'apikey': self.apikey, 
             'domain': self.domain
         }
@@ -320,3 +257,4 @@ class Client:
                 'ticket': self.ticket,
                 'callback': 'alert'}
         return self._httpget("/packets", data)
+
