@@ -1,10 +1,10 @@
 Metadata-Version: 1.0
 Name: webim
-Version: 5.2
-Summary: A Python webim client library.
-Home-page: http://github.com/webim
+Version: 1.0
+Summary: A Python webim client library for nextalk 5.2
+Home-page: http://github.com/webim/webim-python
 Author: Ery Lee
 Author-email: ery.lee at gmail.com
 License: Python Software Foundation License
 Description: A Python webim client library.
-Platform: UNKNOWN
+Platform: OS Independent
