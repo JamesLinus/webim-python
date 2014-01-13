@@ -8,11 +8,12 @@ NAME = "webim"
 PACKAGE = "webim"
 VERSION = webim.__version__
 AUTHOR = webim.__author__
+DESCRIPTION = open("README.md").read()
 
 setup(name=NAME,
       version=VERSION,
       description="Python webim client",
-      long_description=open("README.md").read(),
+      long_description=DESCRIPTION,
       author=AUTHOR,
       author_email="ery.lee@gmail.com",
       license="BSD",
