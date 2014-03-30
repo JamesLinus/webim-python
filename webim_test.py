@@ -29,8 +29,8 @@ class TestWebimMethods(unittest.TestCase):
         resp = self.client.online(self.buddies, self.rooms)
         self.assertTrue(resp['success'])
 
-    def test_show(self):
-        self.client.show('away', 'Away')
+    def test_presence(self):
+        self.client.presence('away', 'Away')
 
     def test_message(self):
         message = {

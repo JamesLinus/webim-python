@@ -108,7 +108,23 @@ class Client:
             'presences': respdata['presences']
         }
 
-    def show(self, show, status=None):
+    def presences(self, ids):
+        """
+        Read presences
+        """
+        reqdata = self._reqdata
+        reqdata.update({
+            'ids': ",".join(ids)
+        })
+        return self._httpget("/presences", reqdata)
+
+    def offline(self):
+        """
+        Client offline
+        """
+        return self._httpost('/presences/offline', self._reqdata)
+
+    def presence(self, show, status=None):
         """
         Send Presence
         """
@@ -120,12 +136,6 @@ class Client:
         })
         if status: reqdata['status'] = status
         return self._httpost('/presences/show', reqdata)
-
-    def offline(self):
-        """
-        Client offline
-        """
-        return self._httpost('/presences/offline', self._reqdata)
 
     def message(self, message):
         """
@@ -155,16 +165,6 @@ class Client:
             'show': status['show']
         })
         return self._httpost('/statuses', reqdata)
-
-    def presences(self, ids):
-        """
-        Read presences
-        """
-        reqdata = self._reqdata
-        reqdata.update({
-            'ids': ",".join(ids)
-        })
-        return self._httpget("/presences", reqdata)
 
     def members(self, room):
         """
