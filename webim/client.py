@@ -7,7 +7,7 @@ python webim client
 Overview
 ========
 
-See U{the Webim homepage<http://www.github.com/webim>} for more about webim.
+See U{the Webim homepage<https://www.github.com/webim>} for more about webim.
 
 Usage summary
 =============
@@ -15,9 +15,9 @@ Usage summary
 This should give you a feel for how this module operates::
 
     import webim 
-    user = {'uid': 'uid1', 'nick': 'user1', 'presence': 'online', 'show': 'available', 'status': ''}
-    c = webim.Client(user, 'domain', 'apikey', host='127.0.0.1', port = 8000)
-    c.online(['uid1','uid2','uid3'], ['grp1','grp2','grp3'])
+    endpoint = {'uid': 'uid1', 'nick': 'user1', 'presence': 'online', 'show': 'available', 'status': ''}
+    c = webim.Client(endpoint, 'domain', 'apikey', host='127.0.0.1', port = 8000)
+    c.online(['uid1','uid2','uid3'], ['room1','room2','room3'])
     c.offline()
 
 Detailed Documentation
@@ -34,8 +34,9 @@ except ImportError:
     import simplejson as json
 
 import time
+import base64
 import urllib
-import urllib2
+import httplib
 import hashlib
 
 # ==============================================================================
@@ -47,21 +48,28 @@ def encode_utf8(data_dict):
             data_dict[key] = value.encode('utf8')
     return data_dict
 
+class WebimException(Exception):
+    def __init__(self, status, reason, error):
+        self.args = (status, reason, error)
+        self.status = status
+        self.reason = reason
+        self.error = error
+
 # ==============================================================================
 # Client
 # ==============================================================================    
 class Client:
     
-    def __init__(self, user, domain, apikey,
-                 ticket=None, host = 'localhost', port=8000, timeout=10):
+    def __init__(self, endpoint, domain, apikey,
+                 ticket=None, host = 'localhost', port=8000, timeout=15):
         """
         Create a new Client object with the given host and port
 
-        @param user: user
+        @param endpoint: endpoint
         @param host: host
         @param port: port
         """
-        self.user = user
+        self.endpoint = endpoint
         self.domain = domain
         self.apikey = apikey
         self.ticket = ticket
@@ -69,45 +77,55 @@ class Client:
         self.port = port
         self.timeout = timeout
         
-    def online(self, buddies, groups):
+    def online(self, buddies, rooms):
         """
         Client online
         """
         reqdata = self._reqdata
         reqdata.update({
             'buddies': ','.join(buddies),
-            'groups': ','.join(groups),
-            'name': self.user['id'],
-            'nick': self.user['nick'],
-            'show': self.user['show'],
-            'status': self.user['status']
+            'rooms': ','.join(rooms),
+            'name': self.endpoint['id'],
+            'nick': self.endpoint['nick'],
+            'show': self.endpoint['show'],
+            'status': self.endpoint['status']
         })
-        status, body = self._httpost('/presences/online', reqdata)
-        respdata = json.loads(body)
-        print 'online.respdata: ', respdata
-        if(status == 200): self.ticket = respdata['ticket']
-        return (status, respdata)
+        respdata = self._httpost('/presences/online', reqdata)
+        self.ticket = respdata['ticket']
+        conn = {
+            'ticket': self.ticket,
+            'domain': self.domain, 
+            'server': respdata['jsonpd'],
+            'jsonpd': respdata['jsonpd']
+        }
+        if 'websocket' in respdata:
+            conn['websocket'] = respdata['websocket']
+        if 'mqtt' in respdata:
+            conn['mqtt'] = respdata['mqtt']
+        return {
+            'success': True,
+            'connection': conn,
+            'presences': respdata['presences']
+        }
 
-    def offline(self):
-        """
-        Client offline
-        """
-        status, body = self._httpost('/presences/offline', self._reqdata)
-        respdata = json.loads(body)
-        return (status, respdata)
-
-    def presence(self, presence):
+    def show(self, show, status=None):
         """
         Send Presence
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.user['nick'],   
-            'show': presence['show'],
-            'status': presence['status']
+            'type': 'show',
+            'nick': self.endpoint['nick'],   
+            'show': show
         })
-        status, body = self._httpost('/presences/show', reqdata)
-        return (status, json.loads(body))
+        if status: reqdata['status'] = status
+        return self._httpost('/presences/show', reqdata)
+
+    def offline(self):
+        """
+        Client offline
+        """
+        return self._httpost('/presences/offline', self._reqdata)
 
     def message(self, message):
         """
@@ -115,33 +133,16 @@ class Client:
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.user['nick'],
+            'nick': self.endpoint['nick'],
             'type': message['type'],
             'to': message['to'],
             'body': message['body'],
             'style': message['style'],
             'timestamp': message['timestamp']
         })
-        status, body = self._httpost('/messages', reqdata)
-        return (status, json.loads(body))
-
-    #TODO: refactor later
-    def push(self, from1, message):
-        """
-        Push Message
-        """
-        reqdata = self._reqdata
-        reqdata.update({
-            'from': from1,
-            'nick': self.user['nick'],
-            'type': message['type'],
-            'to': message['to'],
-            'body': message['body'],
-            'style': message['style'],
-            'timestamp': message['timestamp']
-        })
-        status, body = self._httpost('/messages', reqdata)
-        return (status, json.loads(body))
+        if 'from' in message: 
+            reqdata['from'] = message['from']
+        return self._httpost('/messages', reqdata)
 
     def status(self, status):
         """
@@ -149,12 +150,11 @@ class Client:
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.user['nick'],
+            'nick': self.endpoint['nick'],
             'to': status['to'],
             'show': status['show']
         })
-        status, body = self._httpost('/statuses', reqdata)
-        return (status, json.loads(body))
+        return self._httpost('/statuses', reqdata)
 
     def presences(self, ids):
         """
@@ -164,49 +164,44 @@ class Client:
         reqdata.update({
             'ids': ",".join(ids)
         })
-        status, body = self._httpget("/presences", reqdata)
-        return (status, json.loads(body))
+        return self._httpget("/presences", reqdata)
 
-    def members(self, gid):
+    def members(self, room):
         """
-        Read group members
+        Read room members
         """
         reqdata = self._reqdata
         reqdata.update({
-            'group': gid
+            'room': room 
         })
-        status, body = self._httpget('/group/members', reqdata)
-        return (status, json.loads(body))
+        return self._httpget('/rooms/' + room + '/members', reqdata)
             
-    def join(self, gid):
+    def join(self, room):
         """
-        Join group 
+        Join room
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.user['nick'],
-            'group': gid
+            'nick': self.endpoint['nick'],
+            'room': room
         })
-        status, body = self._httpost('/group/join', reqdata)
-        return (status, json.loads(body))
+        return self._httpost('/rooms/' + room + '/join', reqdata)
             
-    def leave(self, gid):
+    def leave(self, room):
         """
-        Leave group
+        Leave room 
         """
         reqdata = self._reqdata
         reqdata.update({
-            'nick': self.user['nick'],
-            'group': gid
+            'nick': self.endpoint['nick'],
+            'room': room
         })
-        status, body = self._httpost('/group/leave', reqdata)
-        return (status, json.loads(body))
+        return self._httpost('/rooms/' + room + '/leave', reqdata)
         
     @property
     def _reqdata(self):
         data = {
             'version': APIVSN,
-            'apikey': self.apikey, 
             'domain': self.domain
         }
         if self.ticket is not None: 
@@ -215,41 +210,51 @@ class Client:
 
     def _httpget(self, path, params=None):
         """
-        Http Get
+        HTTP GET
         """
         url = self._apiurl(path)
-        
-        if params is not None:
+        if __debug__: 
             print 'GET.url:', url
             print 'GET.params: ', params
+        if params is not None: 
             url += "?" + urllib.urlencode(encode_utf8(params))
-            try:
-                if __debug__: print "GET %s" % url
-                resp = urllib2.urlopen(url, timeout=self.timeout)
-                body = resp.read()
-                if __debug__: print body
-                return (resp.getcode(), body)
-            except urllib2.HTTPError, e:
-                raise e
-        
+        return self._httprequest('GET', url)
+
     def _httpost(self, path, data):
         """
-        Http Post
+        HTTP POST
         """
         url = self._apiurl(path)
-        try:
-            if __debug__: print "POST %s" % url
+        if __debug__: 
             print 'POST.url:', url
             print 'POST.data:', data
-            resp = urllib2.urlopen(url, urllib.urlencode(encode_utf8(data)), self.timeout)
-            body = resp.read()
-            if __debug__: print body
-            return (resp.getcode(), body)
-        except urllib2.HTTPError, e:
-            raise e
+        data = urllib.urlencode(encode_utf8(data))
+        return self._httprequest('POST', url, data)
+
+    def _httprequest(self, method, url, data=None):
+        content = None
+        try:
+            auth = base64.b64encode(self.domain+':'+self.apikey)
+            headers = {'Authorization': 'Basic ' + auth}
+            connection = httplib.HTTPConnection(self.host, self.port, timeout=self.timeout)
+            connection.request(method, url, data, headers) 
+            response = connection.getresponse()
+            status = response.status
+            if status / 100 == 2:
+                content = response.read()
+                if __debug__: 
+                    print method + '.response:'
+                    print content
+                if not url.startswith('/'+APIVSN+'/packets'): 
+                    content = json.loads(content)
+            else:
+                raise WebimException(status, response.reason, response.read())
+        finally:
+            if connection: connection.close()
+        return content
 
     def _apiurl(self, path):
-        return "http://%s:%d/%s%s" % (self.host, self.port, APIVSN, path)
+        return "/%s%s" % (APIVSN, path)
 
     #NOTICE: for test
     def poll(self):
@@ -257,4 +262,5 @@ class Client:
                 'ticket': self.ticket,
                 'callback': 'alert'}
         return self._httpget("/packets", data)
+
 

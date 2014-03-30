@@ -12,12 +12,11 @@ user = {
 
 client = Client(user, "localhost", "public", timeout=30)
 
-status, respdata = client.online(['uid1', 'uid2', 'uid3'], ['grp1'])
+content = client.online(['uid1', 'uid2', 'uid3'], ['room1'])
 
-if status != 200:
-	print "online error:"
-	print respdata
+print "Response: "
 
-else:
-	while(True): print client.poll()
+print content
+
+while(True): print client.poll()
 

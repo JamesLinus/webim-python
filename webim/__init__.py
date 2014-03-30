@@ -1,7 +1,10 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
-__author__    = "Ery Lee <ery.lee@gmail.com>"
-__version__ = "1.0.2"
-__copyright__ = "Copyright (C) 2014 Ery Lee"
-__license__   = "BSD License"
+__title__       = 'webim' 
+__version__     = "5.4.1"
+__author__      = "Ery Lee <ery.lee at gmail.com>"
+__copyright__   = "Copyright (C) 2014 NexTalk.IM"
+__license__     = "BSD License"
 
-from client import Client
+from .client import Client, WebimException

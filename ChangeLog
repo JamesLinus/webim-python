@@ -1,10 +1,21 @@
-2014/01/13  Ery Lee  <ery.lee@gmail.com>
----------------------------------------
+
+5.4.1 (2014/01/13)
+==================
+* groups -> rooms
+* online api changed
+* members api changed
+* presence -> show
+* join/leave api changed
+* replace urllib2 with httplib
+* http basic authentication
+
+2014/01/13
+==================
 
 * pip release
 
-2014/01/09  Ery Lee  <ery.lee@gmail.com>
----------------------------------------
+2014/01/09
+==================
 
 * first release
 

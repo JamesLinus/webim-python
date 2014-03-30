@@ -2,22 +2,26 @@
 Webim-python
 ============
 
-Webim python client for nextalk.im
+WebIM python client for nextalk.im
 
 
 Usage
 =====
 
+    ```python
 
 	import webim 
 
-	user = {'id': 'uid1', 'nick': 'user1', 'presence': 'online', 'show': 'available'}
+	endpoint = {'id': 'uid1', 'nick': 'user1', 'presence': 'online', 'show': 'available'}
 
-	c = webim.Client(user, 'localhost', 'public', host='nextalk.im', port = 8000)
+	c = webim.Client(endpoint, 'domain', 'apikey', host='nextalk.im', port = 8000)
 
-	c.online(['uid1','uid2','uid3'], ['grp1','grp2','grp3'])
+	c.online(['uid1','uid2','uid3'], ['room1','room2','room3'])
 
 	c.offline()
+
+
+    ```
 
 API
 ===
@@ -25,31 +29,43 @@ API
 Online
 ------
     
+    ```python
+
     buddies = ['uid1', 'uid2', 'uid3']
     
-    groups = ['gid1', 'gid2', 'gid3']
+    rooms = ['room1', 'room2', 'room3']
 
-    c.online(buddies, groups)
+    c.online(buddies, rooms)
+
+    ```
 
 Offline
 -------
 
+    ```python
+
     c.offline()
 
+    ```
 
-Update Presence
+
+Presence
 ---------------
 
-    presence = {
-            'type': 'show',
-            'show':  'away',
-            'status': 'Away' 
-    }
+    ```python
 
-    status, resp = self.client.presence(presence)
+    show = 'away'
+
+    status = 'Away'
+
+    status, resp = self.client.show(show, status)
+
+    ```
 
 Send Message
 -------------
+
+    ```python
 
     message = {
         'to': 'uid2',
@@ -61,14 +77,17 @@ Send Message
     }
     status, resp = self.client.message(message)
 
+    ```
+
 Push Message
 -------------
 
-    c = Client(self.user, "localhost", "public")
+    ```python
 
-    from = 'uid3'
+    c = Client(self.endpoint, "localhost", "public")
 
     message = {
+        'from': 'uid3',
         'to': 'uid2',
         'nick': 'user3',
         'body': 'hahaha',
@@ -77,10 +96,14 @@ Push Message
         'style': '' 
     }
 
-    status, resp = c.push(from, message) 
+    status, resp = c.message(message) 
+
+    ```
 
 Send Status
 -----------
+
+    ```python
 
     status = {
         'to': 'uid2',
@@ -89,37 +112,53 @@ Send Status
     }
     status, resp = c.status(status)
 
+    ```
 
 Retrieve Presences
 ------------------
+
+    ```python
 
     uids = ['uid1', 'uid2']
 
     status, json = c.presences(uids)
 
+    ```
 
-Retrieve group members
+
+Retrieve room members
 ----------------------
 
-    gid = 'gid1'
 
-    status, json = c.members(gid)
+    ```python
 
-Join Group
+    room = 'room1'
+
+    status, json = c.members(room)
+
+    ```
+
+Join Room
 ----------
 
-    gid = 'gid1'
+    ```python
 
-    c.join(gid)   
+    room = 'room1'
 
+    c.join(room)   
 
-Leave Group
+    ```
+
+Leave Room
 -----------
 
-    gid = 'gid1'
+    ```python
 
-    c.leave(gid)
+    room = 'room1'
 
+    c.leave(room)
+
+    ```
 
 Author
 ============
