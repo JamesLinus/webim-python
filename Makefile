@@ -1,8 +1,8 @@
 test:
-	python webim-test.py
+	python webim_test.py
 
 clean:
-	rm -f webim.pyc webim-test.pyc
+	rm -f webim.pyc webim_test.pyc
 
-push:
-	bzr push lp:webim
+upload:
+	python setup.py sdist upload
