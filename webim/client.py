@@ -77,18 +77,22 @@ class Client:
         self.port = port
         self.timeout = timeout
         
-    def online(self, buddies, rooms):
+    def online(self, buddies, rooms, show = None):
         """
         Client online
         """
+        if(show == None): show = self.endpoint['show'] 
+        status = "";
+        if 'status' in self.endpoint:
+            status = self.endpoint['status']
         reqdata = self._reqdata
         reqdata.update({
             'buddies': ','.join(buddies),
             'rooms': ','.join(rooms),
             'name': self.endpoint['id'],
             'nick': self.endpoint['nick'],
-            'show': self.endpoint['show'],
-            'status': self.endpoint['status']
+            'show': show,
+            'status': status
         })
         respdata = self._httpost('/presences/online', reqdata)
         self.ticket = respdata['ticket']

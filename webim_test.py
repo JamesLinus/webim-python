@@ -19,7 +19,7 @@ class TestWebimMethods(unittest.TestCase):
                 'nick': 'user1', 
                 'show': 'available', 
                 'status': ''}
-        self.client = Client(self.endpoint, "localhost", "public")
+        self.client = Client(self.endpoint, "localhost", "public", host="t.nextalk.im")
 
         self.buddies = ['uid1', 'uid2', 'uid3']
         self.rooms = ['room1', 'room2', 'room3']
@@ -44,7 +44,7 @@ class TestWebimMethods(unittest.TestCase):
         self.client.message(message)
 
     def test_push(self):
-        c = Client(self.endpoint, "localhost", "public")
+        c = Client(self.endpoint, "localhost", "public", host="t.nextalk.im")
         message = {
             'to': 'uid2',
             'from': 'uid3',
